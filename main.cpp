@@ -1,6 +1,7 @@
 #define _CRT_SECURE_NO_WARNINGS
 #include <cassert>
 #include <iostream>
+#include <map>
 
 using namespace std;
 
@@ -302,12 +303,27 @@ int main(int argc, const char** argv)
 		return 1;
 	}
 
+	map<const char*, uint32_t> elemCount;
 	uint32_t total_size = 0;
 	while(total_size < file_data_size)
 	{
 		RecordHeader* header = reinterpret_cast<RecordHeader*>(file_data + total_size);
-		cout << "Element [" << header->getName() << "]" << endl;
+		const char* elemName = header->getName();
+		auto elemIt = elemCount.find(elemName);
+		if(elemIt == elemCount.end())
+		{
+			elemCount.insert(pair(elemName, 1));
+		}
+		else
+		{
+			++elemIt->second;
+		}
+		//cout << "Element [" << header->getName() << "]" << endl;
 		total_size += header->getSize();
+	}
+	for(auto it = elemCount.begin(); it != elemCount.end(); ++it)
+	{
+		cout << it->first << " = " << it->second << endl;
 	}
 
 	return 0;
