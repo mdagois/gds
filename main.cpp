@@ -2,6 +2,7 @@
 #include <cassert>
 #include <iostream>
 #include <map>
+#include <string>
 
 using namespace std;
 
@@ -131,90 +132,105 @@ enum RecordType : uint8_t
 	RECORD_TYPE_COUNT,
 };
 
-#define ID(record_type, data_type) (record_type << 8 | data_type)
+#define RECORD_ID(record_type, data_type) (record_type << 8 | data_type)
 
 enum RecordId : uint16_t
 {
-	ID_HEADER = ID(HEADER, 0x02),
-	ID_BGNLIB = ID(BGNLIB, 0x02),
-	ID_LIBNAME = ID(LIBNAME, 0x06),
-	ID_UNITS = ID(UNITS, 0x05),
-	ID_ENDLIB = ID(ENDLIB, 0x00),
-	ID_BGNSTR = ID(BGNSTR, 0x02),
-	ID_STRNAME = ID(STRNAME, 0x06),
-	ID_ENDSTR = ID(ENDSTR, 0x00),
-	ID_BOUNDARY = ID(BOUNDARY, 0x00),
-	ID_PATH = ID(PATH, 0x00),
-	ID_SREF = ID(SREF, 0x00),
-	ID_AREF = ID(AREF, 0x00),
-	ID_TEXT = ID(TEXT, 0x00),
-	ID_LAYER = ID(LAYER, 0x02),
-	ID_DATATYPE = ID(DATATYPE, 0x02),
-	ID_WIDTH = ID(WIDTH, 0x03),
-	ID_XY = ID(XY, 0x03),
-	ID_ENDEL = ID(ENDEL, 0x00),
-	ID_SNAME = ID(SNAME, 0x06),
-	ID_COLROW = ID(COLROW, 0x02),
-	ID_TEXTNODE = ID(TEXTNODE, 0x00),
-	ID_NODE = ID(NODE, 0x00),
-	ID_TEXTTYPE = ID(TEXTTYPE, 0x02),
-	ID_PRESENTATION = ID(PRESENTATION, 0x01),
-	ID_STRING = ID(STRING, 0x06),
-	ID_STRANS = ID(STRANS, 0x01),
-	ID_MAG = ID(MAG, 0x05),
-	ID_ANGLE = ID(ANGLE, 0x05),
-	ID_REFLIBS = ID(REFLIBS, 0x06),
-	ID_FONTS = ID(FONTS, 0x06),
-	ID_PATHTYPE = ID(PATHTYPE, 0x02),
-	ID_GENERATIONS = ID(GENERATIONS, 0x02),
-	ID_ATTRTABLE = ID(ATTRTABLE, 0x06),
-	ID_ELFLAGS = ID(ELFLAGS, 0x01),
-	ID_ELKEY = ID(ELKEY, 0x03),
-	ID_NODETYPE = ID(NODETYPE, 0x02),
-	ID_PROPATTR = ID(PROPATTR, 0x02),
-	ID_PROPVALUE = ID(PROPVALUE, 0x06),
-	ID_BOX = ID(BOX, 0x00),
-	ID_BOXTYPE = ID(BOXTYPE, 0x02),
-	ID_PLEX = ID(PLEX, 0x03),
-	ID_BGNEXTN = ID(BGNEXTN, 0x03),
-	ID_ENDEXTN = ID(ENDEXTN, 0x03),
-	ID_TAPENUM = ID(TAPENUM, 0x02),
-	ID_TAPECODE = ID(TAPECODE, 0x02),
-	ID_STRCLASS = ID(STRCLASS, 0x01),
-	ID_RESERVED = ID(RESERVED, 0x03),
-	ID_FORMAT = ID(FORMAT, 0x02),
-	ID_MASK = ID(MASK, 0x06),
-	ID_ENDMASKS = ID(ENDMASKS, 0x00),
-	ID_LIBDIRSIZE = ID(LIBDIRSIZE, 0x02),
-	ID_SFRNAME = ID(SFRNAME, 0x06),
-	ID_LIBSECUR = ID(LIBSECUR, 0x02),
+	ID_HEADER = RECORD_ID(HEADER, 0x02),
+	ID_BGNLIB = RECORD_ID(BGNLIB, 0x02),
+	ID_LIBNAME = RECORD_ID(LIBNAME, 0x06),
+	ID_UNITS = RECORD_ID(UNITS, 0x05),
+	ID_ENDLIB = RECORD_ID(ENDLIB, 0x00),
+	ID_BGNSTR = RECORD_ID(BGNSTR, 0x02),
+	ID_STRNAME = RECORD_ID(STRNAME, 0x06),
+	ID_ENDSTR = RECORD_ID(ENDSTR, 0x00),
+	ID_BOUNDARY = RECORD_ID(BOUNDARY, 0x00),
+	ID_PATH = RECORD_ID(PATH, 0x00),
+	ID_SREF = RECORD_ID(SREF, 0x00),
+	ID_AREF = RECORD_ID(AREF, 0x00),
+	ID_TEXT = RECORD_ID(TEXT, 0x00),
+	ID_LAYER = RECORD_ID(LAYER, 0x02),
+	ID_DATATYPE = RECORD_ID(DATATYPE, 0x02),
+	ID_WIDTH = RECORD_ID(WIDTH, 0x03),
+	ID_XY = RECORD_ID(XY, 0x03),
+	ID_ENDEL = RECORD_ID(ENDEL, 0x00),
+	ID_SNAME = RECORD_ID(SNAME, 0x06),
+	ID_COLROW = RECORD_ID(COLROW, 0x02),
+	ID_TEXTNODE = RECORD_ID(TEXTNODE, 0x00),
+	ID_NODE = RECORD_ID(NODE, 0x00),
+	ID_TEXTTYPE = RECORD_ID(TEXTTYPE, 0x02),
+	ID_PRESENTATION = RECORD_ID(PRESENTATION, 0x01),
+	ID_STRING = RECORD_ID(STRING, 0x06),
+	ID_STRANS = RECORD_ID(STRANS, 0x01),
+	ID_MAG = RECORD_ID(MAG, 0x05),
+	ID_ANGLE = RECORD_ID(ANGLE, 0x05),
+	ID_REFLIBS = RECORD_ID(REFLIBS, 0x06),
+	ID_FONTS = RECORD_ID(FONTS, 0x06),
+	ID_PATHTYPE = RECORD_ID(PATHTYPE, 0x02),
+	ID_GENERATIONS = RECORD_ID(GENERATIONS, 0x02),
+	ID_ATTRTABLE = RECORD_ID(ATTRTABLE, 0x06),
+	ID_ELFLAGS = RECORD_ID(ELFLAGS, 0x01),
+	ID_ELKEY = RECORD_ID(ELKEY, 0x03),
+	ID_NODETYPE = RECORD_ID(NODETYPE, 0x02),
+	ID_PROPATTR = RECORD_ID(PROPATTR, 0x02),
+	ID_PROPVALUE = RECORD_ID(PROPVALUE, 0x06),
+	ID_BOX = RECORD_ID(BOX, 0x00),
+	ID_BOXTYPE = RECORD_ID(BOXTYPE, 0x02),
+	ID_PLEX = RECORD_ID(PLEX, 0x03),
+	ID_BGNEXTN = RECORD_ID(BGNEXTN, 0x03),
+	ID_ENDEXTN = RECORD_ID(ENDEXTN, 0x03),
+	ID_TAPENUM = RECORD_ID(TAPENUM, 0x02),
+	ID_TAPECODE = RECORD_ID(TAPECODE, 0x02),
+	ID_STRCLASS = RECORD_ID(STRCLASS, 0x01),
+	ID_RESERVED = RECORD_ID(RESERVED, 0x03),
+	ID_FORMAT = RECORD_ID(FORMAT, 0x02),
+	ID_MASK = RECORD_ID(MASK, 0x06),
+	ID_ENDMASKS = RECORD_ID(ENDMASKS, 0x00),
+	ID_LIBDIRSIZE = RECORD_ID(LIBDIRSIZE, 0x02),
+	ID_SFRNAME = RECORD_ID(SFRNAME, 0x06),
+	ID_LIBSECUR = RECORD_ID(LIBSECUR, 0x02),
 };
 
-struct RecordHeader
+#undef RECORD_ID
+
+struct Record
 {
 public:
 	uint16_t getSize() const;
+	uint16_t getDataSize() const;
+	RecordId getId() const;
 	const char* getName() const;
+
+	uint16_t getBitArray() const;
+	int16_t getTwoByteSignedInteger() const;
+	int32_t getFourByteSignedInteger() const;
+	double getFourByteReal() const;
+	double getEightByteReal() const;
+	const char* getAsciiString(std::string buffer) const;
 
 private:
 	uint8_t size[2];
-	union
-	{
-		struct
-		{
-			RecordType record_type;
-			DataType data_type;
-		};
-		RecordId record_id;
-	};
+	RecordType record_type;
+	DataType data_type;
+	const uint8_t* value;
 };
 
-uint16_t RecordHeader::getSize() const
+uint16_t Record::getSize() const
 {
 	return size[0] << 8 | size[1];
 }
 
-const char* RecordHeader::getName() const
+uint16_t Record::getDataSize() const
+{
+	return getSize() - 4;
+}
+
+RecordId Record::getId() const
+{
+	return *reinterpret_cast<const RecordId*>(&record_type);
+}
+
+const char* Record::getName() const
 {
 	switch(record_type)
 	{
@@ -285,6 +301,48 @@ const char* RecordHeader::getName() const
 	return "<UNKNOWN>";
 }
 
+uint16_t Record::getBitArray() const
+{
+	return static_cast<uint16_t>(value[0] << 8 | value[1]);
+}
+
+int16_t Record::getTwoByteSignedInteger() const
+{
+	return static_cast<int16_t>(value[0] << 8 | value[1]);
+}
+
+int32_t Record::getFourByteSignedInteger() const
+{
+	return static_cast<int32_t>(value[0] << 24 | value[1] << 16 | value[2] << 8 | value[3]);
+}
+
+double Record::getFourByteReal() const
+{
+	const double sign = value[0] & 0x80 ? -1.0 : 1.0;
+	const int32_t exponent = (value[0] & 0x7F) - 64;
+	const double mantissa = static_cast<double>(value[1] << 16 | value[2] << 8 | value[3]);
+	return sign * mantissa * (1 << (4 * exponent - 24));
+}
+
+double Record::getEightByteReal() const
+{
+#if 0
+	const double sign = value[0] & 0x80 ? -1.0 : 1.0;
+	const int32_t exponent = (value[0] & 0x7F) - 64;
+	const double mantissa = static_cast<double>(value[1] << 48 | value[2] << 40 | value[3] << 32 | value[4] << 24 | value[5] << 16 | value[6] << 8 | value[7]);
+	return sign * mantissa * (1 << (4 * exponent - 56));
+#else
+	return 0.0;
+#endif
+}
+
+const char* Record::getAsciiString(std::string buffer) const
+{
+	buffer.append(reinterpret_cast<const char*>(value), getDataSize());
+	buffer.push_back('\0');
+	return buffer.c_str();
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 
 int main(int argc, const char** argv)
@@ -307,8 +365,8 @@ int main(int argc, const char** argv)
 	uint32_t total_size = 0;
 	while(total_size < file_data_size)
 	{
-		RecordHeader* header = reinterpret_cast<RecordHeader*>(file_data + total_size);
-		const char* elemName = header->getName();
+		Record* record = reinterpret_cast<Record*>(file_data + total_size);
+		const char* elemName = record->getName();
 		auto elemIt = elemCount.find(elemName);
 		if(elemIt == elemCount.end())
 		{
@@ -318,8 +376,8 @@ int main(int argc, const char** argv)
 		{
 			++elemIt->second;
 		}
-		//cout << "Element [" << header->getName() << "]" << endl;
-		total_size += header->getSize();
+		//cout << "Element [" << record->getName() << "]" << endl;
+		total_size += record->getSize();
 	}
 	for(auto it = elemCount.begin(); it != elemCount.end(); ++it)
 	{
@@ -328,4 +386,4 @@ int main(int argc, const char** argv)
 
 	return 0;
 }
-
+ 
