@@ -8,7 +8,7 @@ using namespace std;
 
 ////////////////////////////////////////////////////////////////////////////////
 
-static bool LoadFile(uint8_t*& out_data, uint32_t& out_data_size, const char* filename)
+static bool loadFile(uint8_t*& out_data, uint32_t& out_data_size, const char* filename)
 {
 	assert(filename != nullptr);
 
@@ -198,6 +198,7 @@ struct Record
 public:
 	uint16_t getSize() const;
 	uint16_t getDataSize() const;
+	DataType getDataType() const;
 	RecordId getId() const;
 	const char* getName() const;
 
@@ -206,13 +207,13 @@ public:
 	int32_t getFourByteSignedInteger() const;
 	double getFourByteReal() const;
 	double getEightByteReal() const;
-	const char* getAsciiString(std::string buffer) const;
+	const char* getAsciiString(std::string& out_buffer) const;
 
 private:
 	uint8_t size[2];
 	RecordType record_type;
 	DataType data_type;
-	const uint8_t* value;
+	const uint8_t value[1];
 };
 
 uint16_t Record::getSize() const
@@ -223,6 +224,11 @@ uint16_t Record::getSize() const
 uint16_t Record::getDataSize() const
 {
 	return getSize() - 4;
+}
+
+DataType Record::getDataType() const
+{
+	return data_type;
 }
 
 RecordId Record::getId() const
@@ -320,27 +326,64 @@ double Record::getFourByteReal() const
 {
 	const double sign = value[0] & 0x80 ? -1.0 : 1.0;
 	const int32_t exponent = (value[0] & 0x7F) - 64;
-	const double mantissa = static_cast<double>(value[1] << 16 | value[2] << 8 | value[3]);
-	return sign * mantissa * (1 << (4 * exponent - 24));
+	const uint64_t mantissa = value[1] << 16 | value[2] << 8 | value[3];
+	return sign * mantissa * pow(2, 4 * exponent - 24);
 }
 
 double Record::getEightByteReal() const
 {
-#if 0
 	const double sign = value[0] & 0x80 ? -1.0 : 1.0;
 	const int32_t exponent = (value[0] & 0x7F) - 64;
-	const double mantissa = static_cast<double>(value[1] << 48 | value[2] << 40 | value[3] << 32 | value[4] << 24 | value[5] << 16 | value[6] << 8 | value[7]);
-	return sign * mantissa * (1 << (4 * exponent - 56));
-#else
-	return 0.0;
-#endif
+	const uint64_t mantissa_high = value[1] << 16 | value[2] << 8 | value[3];
+	const uint64_t mantissa_low = value[4] << 24 | value[5] << 16 | value[6] << 8 | value[7];
+	const uint64_t mantissa = mantissa_high << 32 | mantissa_low;
+	return sign * mantissa * pow(2, 4 * exponent - 56);
 }
 
-const char* Record::getAsciiString(std::string buffer) const
+const char* Record::getAsciiString(std::string& out_buffer) const
 {
-	buffer.append(reinterpret_cast<const char*>(value), getDataSize());
-	buffer.push_back('\0');
-	return buffer.c_str();
+	out_buffer.clear();
+	out_buffer.append(reinterpret_cast<const char*>(value), getDataSize());
+	out_buffer.push_back('\0');
+	return out_buffer.c_str();
+}
+
+ostream& operator<<(ostream& os, const Record& record)
+{
+    os << record.getName() << '(';
+	switch(record.getDataType())
+	{
+		case NO_DATA:
+			os << "null";
+			break;
+		case BIT_ARRAY:
+			os << "0x" << hex << record.getBitArray() << dec;
+			break;
+		case TWO_BYTE_SIGNED_INTEGER:
+			os << record.getTwoByteSignedInteger();
+			break;
+		case FOUR_BYTE_SIGNED_INTEGER:
+			os << record.getFourByteSignedInteger();
+			break; 
+		case FOUR_BYTE_REAL:
+			os << record.getFourByteReal();
+			break;
+		case EIGHT_BYTE_REAL:
+			os << record.getEightByteReal();
+			break;
+		case ASCII_STRING:
+		{
+			string buffer;
+			os << record.getAsciiString(buffer);
+			break;
+		}
+		default:
+			assert(false);
+			os << "unknown";
+			break;
+	}
+	os << ')';
+	return os;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -356,7 +399,7 @@ int main(int argc, const char** argv)
 	const char* filename = argv[1];
 	uint8_t* file_data = nullptr;
 	uint32_t file_data_size = 0;
-	if(!LoadFile(file_data, file_data_size, filename))
+	if(!loadFile(file_data, file_data_size, filename))
 	{
 		return 1;
 	}
@@ -376,7 +419,6 @@ int main(int argc, const char** argv)
 		{
 			++elemIt->second;
 		}
-		//cout << "Element [" << record->getName() << "]" << endl;
 		total_size += record->getSize();
 	}
 	for(auto it = elemCount.begin(); it != elemCount.end(); ++it)
