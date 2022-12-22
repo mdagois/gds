@@ -191,15 +191,14 @@ enum RecordId : uint16_t
 	ID_LIBSECUR = RECORD_ID(LIBSECUR, 0x02),
 };
 
-#undef RECORD_ID
-
 struct Record
 {
 public:
 	uint16_t getSize() const;
 	uint16_t getDataSize() const;
 	DataType getDataType() const;
-	RecordId getId() const;
+	RecordType getRecordType() const;
+	RecordId getRecordId() const;
 	const char* getName() const;
 
 	uint16_t getBitArray() const;
@@ -231,9 +230,14 @@ DataType Record::getDataType() const
 	return data_type;
 }
 
-RecordId Record::getId() const
+RecordType Record::getRecordType() const
 {
-	return *reinterpret_cast<const RecordId*>(&record_type);
+	return record_type;
+}
+
+RecordId Record::getRecordId() const
+{
+	return static_cast<RecordId>(RECORD_ID(record_type, data_type));
 }
 
 const char* Record::getName() const
@@ -419,6 +423,16 @@ int main(int argc, const char** argv)
 		{
 			++elemIt->second;
 		}
+#if 0
+		if(record->getRecordId() == ID_STRNAME)
+		{
+			cout << *record << endl;
+		}
+		if (record->getRecordId() == ID_SNAME)
+		{
+			cout << *record << endl;
+		}
+#endif
 		total_size += record->getSize();
 	}
 	for(auto it = elemCount.begin(); it != elemCount.end(); ++it)
@@ -428,4 +442,105 @@ int main(int argc, const char** argv)
 
 	return 0;
 }
- 
+
+#if 0
+HEADER							1
+BGNLIB							1
+	LIBDIRSIZE					1, ignore, optional
+	SFRNAME						1, ignore, optional	
+	LIBSECUR					1, ignore, optional
+	LIBNAME						1
+	REFLIBS						1, unused, optional
+	FONTS						1, unused, optional
+	ATTRTABLE					1, unused, optional
+	GENERATIONS					1, unused, optional
+	FORMAT						1, ignore
+		MASK					*, ignore, optional
+	ENDMASKS					1, ignore, optional
+	UNITS						1
+	BGNSTR						1
+		STRNAME					1
+		STRCLASS				1, ignore, optional
+		BOUNDARY				*
+			ELFLAGS				1, ignore, optional
+			PLEX				1, ignore, optional
+			LAYER				1
+			DATATYPE			1
+			XY					1
+			PROPATTR			*
+			PROPVALUE			*
+		ENDEL					1
+		PATH					1
+			ELFLAGS				1, ignore, optional
+			PLEX				1, ignore, optional
+			LAYER				1
+			DATATYPE			1
+			PATHTYPE			1, optional
+			WIDTH				1, optional
+			BGNEXTN				1, ignore, optional
+			ENDEXTN				1, ignore, optional
+			XY					1
+			PROPATTR			*
+			PROPVALUE			*
+		ENDEL					1
+		SREF					1
+			ELFLAGS				1, ignore, optional
+			PLEX				1, ignore, optional
+			SNAME				1
+			STRANS				1, optional
+				MAG				1, optional
+				ANGLE			1, optional
+			XY					1
+			PROPATTR			*
+			PROPVALUE			*
+		ENDEL					1
+		AREF					1
+			ELFLAGS				1, ignore, optional
+			PLEX				1, ignore, optional
+			SNAME				1
+			STRANS				1, optional
+				MAG				1, optional
+				ANGLE			1, optional
+			COLROW				1
+			XY					1
+			PROPATTR			*
+			PROPVALUE			*
+		ENDEL					1
+		TEXT					1
+			ELFLAGS				1, ignore, optional
+			PLEX				1, ignore, optional
+			LAYER				1
+			TEXTTYPE			1
+				PRESENTATION	1, ignore, optional
+				PATHTYPE		1, optional
+				WIDTH			1, optional
+				STRANS			1, optional
+					MAG			1, optional
+					ANGLE		1, optional
+				XY				1
+				STRING			1
+			PROPATTR			*
+			PROPVALUE			*
+		ENDEL					1
+		NODE					1
+			ELFLAGS				1, ignore, optional
+			PLEX				1, ignore, optional
+			LAYER				1
+			NODETYPE			1
+			XY					1
+			PROPATTR			*
+			PROPVALUE			*
+		ENDEL					1
+		BOX						1
+			ELFLAGS				1, ignore, optional
+			PLEX				1, ignore, optional
+			LAYER				1
+			BOXTYPE				1
+			XY					1
+			PROPATTR			*
+			PROPVALUE			*
+		ENDEL					1
+	ENDSTR						1
+ENDLIB							1
+#endif
+
