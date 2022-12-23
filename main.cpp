@@ -1,3 +1,104 @@
+#if 0
+HEADER							1
+BGNLIB							1
+	LIBDIRSIZE					1, ignore, optional
+	SFRNAME						1, ignore, optional	
+	LIBSECUR					1, ignore, optional
+	LIBNAME						1
+	REFLIBS						1, unused, optional
+	FONTS						1, unused, optional
+	ATTRTABLE					1, unused, optional
+	GENERATIONS					1, unused, optional
+	FORMAT						1, ignore
+		MASK					*, ignore, optional
+	ENDMASKS					1, ignore, optional
+	UNITS						1
+	BGNSTR						1
+		STRNAME					1
+		STRCLASS				1, ignore, optional
+		BOUNDARY				*
+			ELFLAGS				1, ignore, optional
+			PLEX				1, ignore, optional
+			LAYER				1
+			DATATYPE			1
+			XY					1
+			PROPATTR			*
+			PROPVALUE			*
+		ENDEL					1
+		PATH					1
+			ELFLAGS				1, ignore, optional
+			PLEX				1, ignore, optional
+			LAYER				1
+			DATATYPE			1
+			PATHTYPE			1, optional
+			WIDTH				1, optional
+			BGNEXTN				1, ignore, optional
+			ENDEXTN				1, ignore, optional
+			XY					1
+			PROPATTR			*
+			PROPVALUE			*
+		ENDEL					1
+		SREF					1
+			ELFLAGS				1, ignore, optional
+			PLEX				1, ignore, optional
+			SNAME				1
+			STRANS				1, optional
+				MAG				1, optional
+				ANGLE			1, optional
+			XY					1
+			PROPATTR			*
+			PROPVALUE			*
+		ENDEL					1
+		AREF					1
+			ELFLAGS				1, ignore, optional
+			PLEX				1, ignore, optional
+			SNAME				1
+			STRANS				1, optional
+				MAG				1, optional
+				ANGLE			1, optional
+			COLROW				1
+			XY					1
+			PROPATTR			*
+			PROPVALUE			*
+		ENDEL					1
+		TEXT					1
+			ELFLAGS				1, ignore, optional
+			PLEX				1, ignore, optional
+			LAYER				1
+			TEXTTYPE			1
+				PRESENTATION	1, ignore, optional
+				PATHTYPE		1, optional
+				WIDTH			1, optional
+				STRANS			1, optional
+					MAG			1, optional
+					ANGLE		1, optional
+				XY				1
+				STRING			1
+			PROPATTR			*
+			PROPVALUE			*
+		ENDEL					1
+		NODE					1
+			ELFLAGS				1, ignore, optional
+			PLEX				1, ignore, optional
+			LAYER				1
+			NODETYPE			1
+			XY					1
+			PROPATTR			*
+			PROPVALUE			*
+		ENDEL					1
+		BOX						1
+			ELFLAGS				1, ignore, optional
+			PLEX				1, ignore, optional
+			LAYER				1
+			BOXTYPE				1
+			XY					1
+			PROPATTR			*
+			PROPVALUE			*
+		ENDEL					1
+	ENDSTR						1
+ENDLIB							1
+#endif
+
 #define _CRT_SECURE_NO_WARNINGS
 #include <cassert>
 #include <iostream>
@@ -196,16 +297,20 @@ struct Record
 public:
 	uint16_t getSize() const;
 	uint16_t getDataSize() const;
+	uint32_t getDataCount() const;
+
 	DataType getDataType() const;
+	uint32_t getDataTypeSize() const;
 	RecordType getRecordType() const;
 	RecordId getRecordId() const;
+
 	const char* getName() const;
 
-	uint16_t getBitArray() const;
-	int16_t getTwoByteSignedInteger() const;
-	int32_t getFourByteSignedInteger() const;
-	double getFourByteReal() const;
-	double getEightByteReal() const;
+	uint16_t getBitArray(uint32_t n) const;
+	int16_t getTwoByteSignedInteger(uint32_t n) const;
+	int32_t getFourByteSignedInteger(uint32_t n) const;
+	double getFourByteReal(uint32_t n) const;
+	double getEightByteReal(uint32_t n) const;
 	const char* getAsciiString(std::string& out_buffer) const;
 
 private:
@@ -225,9 +330,31 @@ uint16_t Record::getDataSize() const
 	return getSize() - 4;
 }
 
+uint32_t Record::getDataCount() const
+{
+	return getDataSize() / getDataTypeSize();
+}
+
 DataType Record::getDataType() const
 {
 	return data_type;
+}
+
+uint32_t Record::getDataTypeSize() const
+{
+	switch(data_type)
+	{
+		case NO_DATA: return 0;
+		case BIT_ARRAY: return 2;
+		case TWO_BYTE_SIGNED_INTEGER: return 2;
+		case FOUR_BYTE_SIGNED_INTEGER: return 4;
+		case FOUR_BYTE_REAL: return 4;
+		case EIGHT_BYTE_REAL: return 8;
+		case ASCII_STRING: return 1;
+		default: break;
+	}
+	assert(false);
+	return 0;
 }
 
 RecordType Record::getRecordType() const
@@ -311,35 +438,40 @@ const char* Record::getName() const
 	return "<UNKNOWN>";
 }
 
-uint16_t Record::getBitArray() const
+uint16_t Record::getBitArray(uint32_t n) const
 {
-	return static_cast<uint16_t>(value[0] << 8 | value[1]);
+	const uint8_t* v = value + n * getDataTypeSize();
+	return static_cast<uint16_t>(v[0] << 8 | v[1]);
 }
 
-int16_t Record::getTwoByteSignedInteger() const
+int16_t Record::getTwoByteSignedInteger(uint32_t n) const
 {
-	return static_cast<int16_t>(value[0] << 8 | value[1]);
+	const uint8_t* v = value + n * getDataTypeSize();
+	return static_cast<int16_t>(v[0] << 8 | v[1]);
 }
 
-int32_t Record::getFourByteSignedInteger() const
+int32_t Record::getFourByteSignedInteger(uint32_t n) const
 {
-	return static_cast<int32_t>(value[0] << 24 | value[1] << 16 | value[2] << 8 | value[3]);
+	const uint8_t* v = value + n * getDataTypeSize();
+	return static_cast<int32_t>(v[0] << 24 | v[1] << 16 | v[2] << 8 | v[3]);
 }
 
-double Record::getFourByteReal() const
+double Record::getFourByteReal(uint32_t n) const
 {
-	const double sign = value[0] & 0x80 ? -1.0 : 1.0;
-	const int32_t exponent = (value[0] & 0x7F) - 64;
-	const uint64_t mantissa = value[1] << 16 | value[2] << 8 | value[3];
+	const uint8_t* v = value + n * getDataTypeSize();
+	const double sign = v[0] & 0x80 ? -1.0 : 1.0;
+	const int32_t exponent = (v[0] & 0x7F) - 64;
+	const uint64_t mantissa = v[1] << 16 | v[2] << 8 | v[3];
 	return sign * mantissa * pow(2, 4 * exponent - 24);
 }
 
-double Record::getEightByteReal() const
+double Record::getEightByteReal(uint32_t n) const
 {
-	const double sign = value[0] & 0x80 ? -1.0 : 1.0;
-	const int32_t exponent = (value[0] & 0x7F) - 64;
-	const uint64_t mantissa_high = value[1] << 16 | value[2] << 8 | value[3];
-	const uint64_t mantissa_low = value[4] << 24 | value[5] << 16 | value[6] << 8 | value[7];
+	const uint8_t* v = value + n * getDataTypeSize();
+	const double sign = v[0] & 0x80 ? -1.0 : 1.0;
+	const int32_t exponent = (v[0] & 0x7F) - 64;
+	const uint64_t mantissa_high = v[1] << 16 | v[2] << 8 | v[3];
+	const uint64_t mantissa_low = v[4] << 24 | v[5] << 16 | v[6] << 8 | v[7];
 	const uint64_t mantissa = mantissa_high << 32 | mantissa_low;
 	return sign * mantissa * pow(2, 4 * exponent - 56);
 }
@@ -361,19 +493,19 @@ ostream& operator<<(ostream& os, const Record& record)
 			os << "null";
 			break;
 		case BIT_ARRAY:
-			os << "0x" << hex << record.getBitArray() << dec;
+			os << "0x" << hex << record.getBitArray(0) << dec;
 			break;
 		case TWO_BYTE_SIGNED_INTEGER:
-			os << record.getTwoByteSignedInteger();
+			os << record.getTwoByteSignedInteger(0);
 			break;
 		case FOUR_BYTE_SIGNED_INTEGER:
-			os << record.getFourByteSignedInteger();
+			os << record.getFourByteSignedInteger(0);
 			break; 
 		case FOUR_BYTE_REAL:
-			os << record.getFourByteReal();
+			os << record.getFourByteReal(0);
 			break;
 		case EIGHT_BYTE_REAL:
-			os << record.getEightByteReal();
+			os << record.getEightByteReal(0);
 			break;
 		case ASCII_STRING:
 		{
@@ -392,78 +524,84 @@ ostream& operator<<(ostream& os, const Record& record)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-int main(int argc, const char** argv)
+void parse(const Record& record)
 {
-	if(argc < 2)
+	switch(record.getRecordId())
 	{
-		cout << "No GDS file specified" << endl;
-		return 1;
-	}
-
-	const char* filename = argv[1];
-	uint8_t* file_data = nullptr;
-	uint32_t file_data_size = 0;
-	if(!loadFile(file_data, file_data_size, filename))
-	{
-		return 1;
-	}
-
-	map<const char*, uint32_t> elemCount;
-	uint32_t total_size = 0;
-	while(total_size < file_data_size)
-	{
-		Record* record = reinterpret_cast<Record*>(file_data + total_size);
-		const char* elemName = record->getName();
-		auto elemIt = elemCount.find(elemName);
-		if(elemIt == elemCount.end())
+		case ID_HEADER:
 		{
-			elemCount.insert(pair(elemName, 1));
+			cout << "Version: " << record.getTwoByteSignedInteger(0) << endl;
+			break;
 		}
-		else
+		case ID_BGNLIB:
 		{
-			++elemIt->second;
+			cout
+				<< "Modified: "
+				<< record.getTwoByteSignedInteger(0) << "/" << record.getTwoByteSignedInteger(1) << "/" << record.getTwoByteSignedInteger(2) << " "
+				<< record.getTwoByteSignedInteger(3) << ":" << record.getTwoByteSignedInteger(4) << ":" << record.getTwoByteSignedInteger(5)
+				<< endl
+				<< "Accessed: "
+				<< record.getTwoByteSignedInteger(6) << "/" << record.getTwoByteSignedInteger(7) << "/" << record.getTwoByteSignedInteger(8) << " "
+				<< record.getTwoByteSignedInteger(9) << ":" << record.getTwoByteSignedInteger(10) << ":" << record.getTwoByteSignedInteger(11)
+				<< endl;
+			break;
 		}
+		case ID_LIBNAME:
+		{
+			string buffer;
+			cout << record.getAsciiString(buffer) << endl;
+			break;
+		}
+		case ID_UNITS:
+		{
+			cout
+				<< "User units per database unit: " << record.getEightByteReal(0) << endl
+				<< "Database unit in meter: " << record.getEightByteReal(1) << endl
+				<< "User unit in meter: " << record.getEightByteReal(1) / record.getEightByteReal(0) << endl;
+			break;
+		}
+		case ID_BGNSTR:
+		{
+			cout
+				<< "\tModified: "
+				<< record.getTwoByteSignedInteger(0) << "/" << record.getTwoByteSignedInteger(1) << "/" << record.getTwoByteSignedInteger(2) << " "
+				<< record.getTwoByteSignedInteger(3) << ":" << record.getTwoByteSignedInteger(4) << ":" << record.getTwoByteSignedInteger(5)
+				<< endl
+				<< "\tAccessed: "
+				<< record.getTwoByteSignedInteger(6) << "/" << record.getTwoByteSignedInteger(7) << "/" << record.getTwoByteSignedInteger(8) << " "
+				<< record.getTwoByteSignedInteger(9) << ":" << record.getTwoByteSignedInteger(10) << ":" << record.getTwoByteSignedInteger(11)
+				<< endl;
+			break;
+		}
+		case ID_STRNAME:
+		{
+			string buffer;
+			cout << "\t" << record.getAsciiString(buffer) << endl;
+			break;
+		}
+		case ID_PATH:
+		{
+			cout << "\tBOUNDARY: " << record.getDataCount() << endl;
+			break;
+		}
+		case ID_XY:
+		{
+			cout << "\t\tXY: " << record.getDataCount() << endl;
+			break;
+		}
+		case ID_ENDEL:
+		case ID_ENDSTR:
+		case ID_ENDLIB:
+		{
+			break;
+		}
+		default:
+		{
+			break;
+		}
+	}
 #if 0
-		if(record->getRecordId() == ID_STRNAME)
-		{
-			cout << *record << endl;
-		}
-		if (record->getRecordId() == ID_SNAME)
-		{
-			cout << *record << endl;
-		}
-#endif
-		total_size += record->getSize();
-	}
-	for(auto it = elemCount.begin(); it != elemCount.end(); ++it)
-	{
-		cout << it->first << " = " << it->second << endl;
-	}
-
-	return 0;
-}
-
-#if 0
-HEADER							1
-BGNLIB							1
-	LIBDIRSIZE					1, ignore, optional
-	SFRNAME						1, ignore, optional	
-	LIBSECUR					1, ignore, optional
-	LIBNAME						1
-	REFLIBS						1, unused, optional
-	FONTS						1, unused, optional
-	ATTRTABLE					1, unused, optional
-	GENERATIONS					1, unused, optional
-	FORMAT						1, ignore
-		MASK					*, ignore, optional
-	ENDMASKS					1, ignore, optional
-	UNITS						1
-	BGNSTR						1
-		STRNAME					1
-		STRCLASS				1, ignore, optional
 		BOUNDARY				*
-			ELFLAGS				1, ignore, optional
-			PLEX				1, ignore, optional
 			LAYER				1
 			DATATYPE			1
 			XY					1
@@ -471,21 +609,15 @@ BGNLIB							1
 			PROPVALUE			*
 		ENDEL					1
 		PATH					1
-			ELFLAGS				1, ignore, optional
-			PLEX				1, ignore, optional
 			LAYER				1
 			DATATYPE			1
 			PATHTYPE			1, optional
 			WIDTH				1, optional
-			BGNEXTN				1, ignore, optional
-			ENDEXTN				1, ignore, optional
 			XY					1
 			PROPATTR			*
 			PROPVALUE			*
 		ENDEL					1
 		SREF					1
-			ELFLAGS				1, ignore, optional
-			PLEX				1, ignore, optional
 			SNAME				1
 			STRANS				1, optional
 				MAG				1, optional
@@ -495,8 +627,6 @@ BGNLIB							1
 			PROPVALUE			*
 		ENDEL					1
 		AREF					1
-			ELFLAGS				1, ignore, optional
-			PLEX				1, ignore, optional
 			SNAME				1
 			STRANS				1, optional
 				MAG				1, optional
@@ -507,11 +637,8 @@ BGNLIB							1
 			PROPVALUE			*
 		ENDEL					1
 		TEXT					1
-			ELFLAGS				1, ignore, optional
-			PLEX				1, ignore, optional
 			LAYER				1
 			TEXTTYPE			1
-				PRESENTATION	1, ignore, optional
 				PATHTYPE		1, optional
 				WIDTH			1, optional
 				STRANS			1, optional
@@ -543,4 +670,58 @@ BGNLIB							1
 	ENDSTR						1
 ENDLIB							1
 #endif
+}
+
+int main(int argc, const char** argv)
+{
+	if(argc < 2)
+	{
+		cout << "No GDS file specified" << endl;
+		return 1;
+	}
+
+	const char* filename = argv[1];
+	uint8_t* file_data = nullptr;
+	uint32_t file_data_size = 0;
+	if(!loadFile(file_data, file_data_size, filename))
+	{
+		return 1;
+	}
+
+	map<const char*, uint32_t> elemCount;
+	uint32_t total_size = 0;
+	while(total_size < file_data_size)
+	{
+		const Record& record = *reinterpret_cast<const Record*>(file_data + total_size);
+		const char* elemName = record.getName();
+		auto elemIt = elemCount.find(elemName);
+		if(elemIt == elemCount.end())
+		{
+			elemCount.insert(pair(elemName, 1));
+		}
+		else
+		{
+			++elemIt->second;
+		}
+		parse(record);
+#if 0
+		if(record.getRecordId() == ID_STRNAME)
+		{
+			cout << record << endl;
+		}
+		if (record.getRecordId() == ID_SNAME)
+		{
+			cout << record << endl;
+		}
+#endif
+		total_size += record.getSize();
+	}
+	cout << endl << endl;
+	for(auto it = elemCount.begin(); it != elemCount.end(); ++it)
+	{
+		cout << it->first << " = " << it->second << endl;
+	}
+
+	return 0;
+}
 
